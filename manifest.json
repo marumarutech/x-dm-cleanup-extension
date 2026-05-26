@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "x-dm-cleanup (personal)",
+  "version": "0.1.6",
+  "description": "Personal helper to bulk-delete your own sent DMs on X (manual DOM adapter required).",
+  "action": {
+    "default_title": "X DM cleanup",
+    "default_popup": "popup/popup.html"
+  },
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://mobile.twitter.com/*",
+    "https://mobile.x.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://mobile.twitter.com/*",
+        "https://mobile.x.com/*"
+      ],
+      "js": [
+        "lib/dom-deep.js",
+        "lib/selectors.js",
+        "lib/viewport.js",
+        "lib/adapter.js",
+        "content/orchestrator.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}

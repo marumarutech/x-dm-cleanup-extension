@@ -1,0 +1,48 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  width: 320px;
+  margin: 0;
+  padding: 12px;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+h1 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+.hint {
+  color: #555;
+  margin: 0 0 12px;
+  line-height: 1.35;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+input[type='number'] {
+  width: 100%;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+button {
+  flex: 1;
+  padding: 8px;
+  cursor: pointer;
+}
+#status {
+  min-height: 4em;
+  margin: 0;
+  padding: 8px;
+  background: #f4f4f4;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
