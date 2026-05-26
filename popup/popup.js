@@ -17,9 +17,83 @@ const CONTENT_SCRIPT_FILES = [
   'content/orchestrator.js',
 ];
 
-/** Count DM-ish nodes incl. shadows — keep in sync with adapter heuristics */
-const DM_NODE_PROBE_SELECTOR =
-  '[data-testid="messageEntry"], [data-testid="DMCompositeMessage"], [data-testid*="essage"], [data-testid*="Bubble"]';
+/** Score frames: messages in thread > inbox rows > generic DM nodes */
+async function injectAndPickDmFrame(tabId) {
+  await chrome.scripting.executeScript({
+    target: { tabId, allFrames: true },
+    files: CONTENT_SCRIPT_FILES,
+  });
+
+  const probes = await chrome.scripting.executeScript({
+    target: { tabId, allFrames: true },
+    func: () => {
+      const deep = typeof window.XDM?.deepQueryAll === 'function';
+      /** @param {string} sel */
+      const q = (sel) => {
+        try {
+          return deep ? window.XDM.deepQueryAll(sel).length : document.querySelectorAll(sel).length;
+        } catch {
+          return 0;
+        }
+      };
+
+      const messages = q('[data-testid="messageEntry"], [data-testid="DMCompositeMessage"]');
+      const convClassic = q('[data-testid="conversation"], [data-testid="DMConversation"]');
+      const convLinks = q('a[href*="/i/chat/"]');
+      let convWild = 0;
+      if (deep) {
+        for (const el of window.XDM.deepQueryAll('[data-testid]')) {
+          const t = el.getAttribute('data-testid') || '';
+          if (/conversation|ChatThread|chatThread|DmThread/i.test(t)) convWild++;
+        }
+      }
+      const cells = q('[data-testid="cellInnerDiv"]');
+      const generic = q(
+        '[data-testid*="essage"], [data-testid*="Bubble"], [data-testid*="onversation"]',
+      );
+
+      const inThread = /\/i\/chat\/\d+-\d+/.test(location.pathname);
+      const score =
+        messages * 10 +
+        (inThread ? messages * 5 : 0) +
+        convClassic * 4 +
+        convLinks * 3 +
+        convWild * 2 +
+        Math.min(cells, 40) +
+        Math.min(generic, 20);
+
+      return {
+        score,
+        messages,
+        convLinks,
+        convClassic,
+        cells,
+        pathname: location.pathname,
+      };
+    },
+  });
+
+  let bestFrameId = 0;
+  let bestScore = -1;
+  /** @type {unknown} */
+  let bestMeta = null;
+  for (const p of probes) {
+    const meta = p.result;
+    if (!meta || typeof meta !== 'object') continue;
+    const score = Number(/** @type {{ score?: number }} */ (meta).score);
+    if (!Number.isFinite(score)) continue;
+    if (score > bestScore) {
+      bestScore = score;
+      bestFrameId = p.frameId;
+      bestMeta = meta;
+    }
+  }
+
+  if (bestMeta && bestScore >= 0) {
+    console.info('[x-dm-cleanup popup] picked frame', bestFrameId, bestMeta);
+  }
+  return bestFrameId;
+}
 
 /** @param {string | undefined} url */
 function isXdmHost(url) {
@@ -64,55 +138,6 @@ async function saveSettings() {
 async function getActiveTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
-}
-
-/**
- * Inject into every frame (/i/chat is often iframe). Pick frame with most DM-like nodes.
- * @param {number} tabId
- * @returns {Promise<number>} frameId
- */
-async function injectAndPickDmFrame(tabId) {
-  await chrome.scripting.executeScript({
-    target: { tabId, allFrames: true },
-    files: CONTENT_SCRIPT_FILES,
-  });
-
-  const probes = await chrome.scripting.executeScript({
-    target: { tabId, allFrames: true },
-    func: (sel) => {
-      const win = typeof window !== 'undefined' ? window : /** @type {Window | undefined} */ (undefined);
-      const deep =
-        win &&
-        typeof win.XDM === 'object' &&
-        win.XDM !== null &&
-        typeof win.XDM.deepQueryAll === 'function';
-      try {
-        if (deep && win) {
-          return win.XDM.deepQueryAll(sel).length;
-        }
-      } catch {
-        /** fall through */
-      }
-      try {
-        return document.querySelectorAll(sel).length;
-      } catch {
-        return 0;
-      }
-    },
-    args: [DM_NODE_PROBE_SELECTOR],
-  });
-
-  let bestFrameId = 0;
-  let bestCount = -1;
-  for (const p of probes) {
-    const n = typeof p.result === 'number' ? p.result : Number(p.result);
-    if (!Number.isFinite(n)) continue;
-    if (n > bestCount) {
-      bestCount = n;
-      bestFrameId = p.frameId;
-    }
-  }
-  return bestFrameId;
 }
 
 /**

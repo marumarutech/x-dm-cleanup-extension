@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "x-dm-cleanup (personal)",
-  "version": "0.1.6",
-  "description": "Personal helper to bulk-delete your own sent DMs on X (manual DOM adapter required).",
+  "version": "0.3.1",
+  "description": "Personal helper to bulk-delete DM conversations from your X inbox (list → Delete conversation → Confirm).",
   "action": {
     "default_title": "X DM cleanup",
     "default_popup": "popup/popup.html"
