@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "x-dm-cleanup (personal)",
-  "version": "0.3.1",
-  "description": "Personal helper to bulk-delete DM conversations from your X inbox (list → Delete conversation → Confirm).",
+  "version": "0.4.2",
+  "description": "Personal helper: bulk-delete DM conversations, delete posts, or undo reposts on X (top N).",
   "action": {
     "default_title": "X DM cleanup",
     "default_popup": "popup/popup.html"
@@ -30,6 +30,7 @@
         "lib/selectors.js",
         "lib/viewport.js",
         "lib/adapter.js",
+        "lib/tweet-adapter.js",
         "content/orchestrator.js"
       ],
       "run_at": "document_idle",

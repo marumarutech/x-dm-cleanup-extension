@@ -1,16 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <title>X DM cleanup</title>
+    <title>X cleanup</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <h1>X DM cleanup</h1>
-    <p class="hint">
-      左の一覧で<strong>いちばん上の会話</strong>を右クリック →「会話を削除」→ 確認、を繰り返します。<br />
-      会話を開いた状態でも動作します（/i/chat ページで Start）。
-    </p>
+    <h1>X cleanup</h1>
+    <label>
+      モード
+      <select id="mode">
+        <option value="dm">DM 会話削除</option>
+        <option value="tweet">ツイート削除（上から）</option>
+      </select>
+    </label>
+    <p id="modeHint" class="hint"></p>
     <label>
       Min delay (ms)
       <input id="minDelay" type="number" min="200" step="50" value="800" />
@@ -20,7 +24,7 @@
       <input id="maxDelay" type="number" min="200" step="50" value="2000" />
     </label>
     <label>
-      Max deletes this run
+      <span id="maxDeletesLabel">Max deletes this run</span>
       <input id="maxDeletes" type="number" min="1" step="1" value="50" />
     </label>
     <label>

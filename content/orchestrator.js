@@ -26,6 +26,7 @@
       maxDelayMs,
       maxDeletes,
       maxConsecutiveErrors,
+      mode = 'dm',
     } = payload;
 
     state.running = true;
@@ -47,7 +48,15 @@
       /** @type {{ result: string; detail?: string } | undefined} */
       let step;
       try {
-        step = await window.XDM.adapter.deleteOneSentMessage();
+        if (mode === 'tweet') {
+          if (!window.XDM.tweetAdapter?.deleteTopTweet) {
+            step = { result: 'none', detail: 'TWEET_ADAPTER_MISSING' };
+          } else {
+            step = await window.XDM.tweetAdapter.deleteTopTweet();
+          }
+        } else {
+          step = await window.XDM.adapter.deleteOneSentMessage();
+        }
       } catch (e) {
         consecutiveErrors++;
         stats.errors++;
@@ -120,6 +129,7 @@
     const maxDelayMs = Number(payload.maxDelayMs) || 2000;
     const maxDeletes = Number(payload.maxDeletes) || 50;
     const maxConsecutiveErrors = Number(payload.maxConsecutiveErrors) || 5;
+    const mode = payload.mode === 'tweet' ? 'tweet' : 'dm';
 
     /** Reply immediately — long runs must not hold sendResponse (channel closes → console error). */
     sendResponse({ ok: true, started: true });
@@ -128,6 +138,7 @@
       maxDelayMs,
       maxDeletes,
       maxConsecutiveErrors,
+      mode,
     });
     return false;
   });
